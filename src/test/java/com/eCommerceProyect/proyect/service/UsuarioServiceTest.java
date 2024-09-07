@@ -1,8 +1,7 @@
-package com.eCommerceProyect.proyect;
+package com.eCommerceProyect.proyect.service;
 
 import com.eCommerceProyect.proyect.model.Usuario;
 import com.eCommerceProyect.proyect.repository.UsuarioRepository;
-import com.eCommerceProyect.proyect.service.UsuarioService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;

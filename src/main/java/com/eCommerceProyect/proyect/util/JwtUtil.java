@@ -3,7 +3,13 @@ package com.eCommerceProyect.proyect.util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SignatureException;
 import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +18,13 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    private String SECRET_KEY = "secret";  // Llave secreta
+    // Generamos una clave secreta segura para HS256
+    //private final SecretKey SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    // Clave secreta de 256 bits (32 bytes) en Base64
+    private final SecretKey SECRET_KEY = new SecretKeySpec(
+            Base64.getDecoder().decode("c2VjcmV0a2V5Zm9ydGVzdGluZzEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI="),
+            SignatureAlgorithm.HS256.getJcaName()
+    );
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -28,7 +40,7 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody();
+        return Jwts.parserBuilder().setSigningKey(SECRET_KEY).build().parseClaimsJws(token).getBody();
     }
 
     private Boolean isTokenExpired(String token) {
@@ -46,13 +58,17 @@ public class JwtUtil {
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))  // 10 horas de expiración
-                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
+                .signWith(SECRET_KEY)  // Usamos la nueva clave segura
                 .compact();
     }
 
     public Boolean validateToken(String token, String username) {
-        final String tokenUsername = extractUsername(token);
-        return (tokenUsername.equals(username) && !isTokenExpired(token));
+        try {
+            final String tokenUsername = extractUsername(token);
+            return (tokenUsername.equals(username) && !isTokenExpired(token));
+        } catch (SignatureException e) {
+            // Si la firma es inválida, retorna false
+            return false;
+        }
     }
 }
-
